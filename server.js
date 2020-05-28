@@ -52,7 +52,7 @@ app.listen(port, () => console.log(`listening on port ${port}`));
  *                 max_capacity:
  *                      type:integer
  *                      example:40
- *                 current_capacity:
+ *                 used_capacity:
  *                      type:integer
  *                      example:40
  *       400:
@@ -65,7 +65,7 @@ app.get("/couriers/lookup", (req, res) => {
         res.status(400).send("Invalid parameters format");
     }
     else {
-        res.status(200).send({ data: couriers.where((courier) => (courier.max_capacity - courier.capacity == capacity_required) || (courier.max_capacity - courier.capacity > capacity_required)) });
+        res.status(200).send({ data: couriers.where((courier) => ((courier.max_capacity - courier.used_capacity == capacity_required) || (courier.max_capacity - courier.used_capacity > capacity_required))) });
     }
 });
 
@@ -93,7 +93,7 @@ app.get("/couriers/lookup", (req, res) => {
 app.post("/couriers", (req, res) => {
     const { max_capacity } = req.body;
     if (format.validateCapacity(max_capacity)) {
-        couriers.insert({ max_capacity: max_capacity, capacity: max_capacity })
+        couriers.insert({ max_capacity: max_capacity, used_capacity: 0 })
         res.sendStatus(200);
     }
     else {
@@ -149,26 +149,30 @@ app.delete("/couriers", (req, res) => {
  *       200:
  *         description: Courier updated successfully
  *       400:
- *         description: Invalid Parameter Format
+ *         description: Invalid Parameters Format
  */
 app.put("/couriers", (req, res) => {
-    const data = req.query;
-    console.log(data);
-    const { id, max_capacity, capacity } = data;
-    let validParams = (capacity ? format.validateCapacity(capacity) : true)
+    let { id, max_capacity, used_capacity } = req.query;
+    id = Number(id);
+    max_capacity = Number(max_capacity);
+    used_capacity = Number(used_capacity);
+
+    let validParams = (used_capacity ? format.validateCapacity(used_capacity) : true)
         && (max_capacity ? format.validateCapacity(max_capacity) : true)
-        && ((capacity && max_capacity) ? ((Number(max_capacity) > Number(capacity) || Number(max_capacity) == Number(capacity))) : true)
-        && (capacity || max_capacity);
+        && ((used_capacity && max_capacity) ? (max_capacity > used_capacity) || (used_capacity == max_capacity) : true)
+        && (used_capacity || max_capacity);
 
     if (validParams && id) {
-        let courier = couriers.findOne({ $loki: Number(req.query.id) });
-        Object.keys(courier).forEach(key => {
-            if ((key !== "meta") && (key != "$loki")) {
-                courier[key] = data[key];
-            }
-        })
-        couriers.update(courier);
-        res.sendStatus(200);
+        let courier = couriers.findOne({ $loki: id });
+        console.log("courier", courier);
+        if (!courier) {
+            res.status(400).send("Courier not found");
+        } else {
+            courier.used_capacity = used_capacity ? used_capacity : courier.used_capacity;
+            courier.max_capacity = max_capacity ? max_capacity : courier.max_capacity;
+            couriers.update(courier);
+            res.sendStatus(200);
+        }
     }
     else {
         res.status(400).send("Invalid parameters");
