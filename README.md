@@ -30,8 +30,6 @@ npm run start
 
 The server will run by default on port 5000 if no port specified
 
-## Test
+## Documentation
 
-Go to localhost:5000/docs
-
-You will find the swagger documentation for the API that you can test
+The Swagger documentation is accessible at localhost:5000/docs

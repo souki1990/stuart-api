@@ -56,13 +56,13 @@ app.listen(port, () => console.log(`listening on port ${port}`));
  *                      type:integer
  *                      example:40
  *       400:
- *         description: Invalid Data Format
+ *         description: Invalid Parameters Format
  */
 app.get("/couriers/lookup", (req, res) => {
     const capacity_required = req.query.capacity_required;
     console.log(capacity_required);
     if (!format.validateCapacity(capacity_required)) {
-        res.status(400).send("Invalid data format");
+        res.status(400).send("Invalid parameters format");
     }
     else {
         res.status(200).send({ data: couriers.where((courier) => (courier.max_capacity - courier.capacity == capacity_required) || (courier.max_capacity - courier.capacity > capacity_required)) });
@@ -97,7 +97,7 @@ app.post("/couriers", (req, res) => {
         res.sendStatus(200);
     }
     else {
-        res.status(400).send("Invalid data format");
+        res.status(400).send("Invalid parameters format");
 
     }
 });
@@ -149,7 +149,7 @@ app.delete("/couriers", (req, res) => {
  *       200:
  *         description: Courier updated successfully
  *       400:
- *         description: Invalid Data Format
+ *         description: Invalid Parameter Format
  */
 app.put("/couriers", (req, res) => {
     const data = req.query;
